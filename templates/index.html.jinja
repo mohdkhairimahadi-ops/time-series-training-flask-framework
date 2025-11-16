@@ -3,140 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Series Forecasting</title>
+    <title>Temp & Humidity Forecast</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* === Page Style === */
         body {
             font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, #74ABE2, #5563DE);
             display: flex;
-            align-items: center;
             justify-content: center;
-            height: 100vh;
+            align-items: center;
+            min-height: 100vh;
             margin: 0;
             color: #333;
         }
-
         .card {
-            background-color: #fff;
-            width: 480px;
+            background: #fff;
+            width: 580px;
             border-radius: 20px;
-            box-shadow: 0 6px 25px rgba(0,0,0,0.15);
-            padding: 40px 45px;
+            box-shadow: 0 6px 25px rgba(0,0,0,.15);
+            padding: 35px 40px;
             text-align: center;
-            transition: transform 0.2s ease-in-out;
         }
+        h1 { color: #4A4AD8; font-size: 1.8em; margin-bottom: 8px; }
+        p { font-size: .95em; color: #555; margin-bottom: 15px; }
 
-        .card:hover {
-            transform: translateY(-5px);
+        .input-group {
+            margin-bottom: 18px;
+            text-align: left;
         }
-
-        h1 {
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
             color: #4A4AD8;
-            font-size: 1.8em;
-            margin-bottom: 10px;
         }
-
-        p {
-            font-size: 0.95em;
-            color: #555;
-            margin-bottom: 20px;
-        }
-
-        input[type="text"] {
+        .input-group input {
             width: 100%;
-            padding: 12px 15px;
+            padding: 10px 12px;
             border: 1px solid #ccc;
-            border-radius: 10px;
-            font-size: 0.95em;
-            outline: none;
-            transition: all 0.3s ease;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: .95em;
         }
-
-        input[type="text"]:focus {
+        .input-group input:focus {
             border-color: #4A4AD8;
-            box-shadow: 0 0 5px rgba(74, 74, 216, 0.3);
+            box-shadow: 0 0 5px rgba(74,74,216,.3);
+            outline: none;
         }
 
         button {
-            background-color: #4A4AD8;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background 0.3s ease;
-            width: 100%;
-            margin-top: 15px;
+            background: #4A4AD8; color: #fff; border: none; padding: 12px;
+            border-radius: 10px; font-size: 1em; width: 100%; cursor: pointer;
+            margin-top: 10px;
+            transition: background .3s;
         }
-
-        button:hover {
-            background-color: #3940b3;
-        }
+        button:hover { background: #3940b3; }
 
         .result {
-            background-color: #F0F3FF;
-            border-left: 5px solid #4A4AD8;
+            background: #F0F3FF; border-left: 5px solid #4A4AD8; padding: 15px;
+            border-radius: 10px; margin: 20px 0; font-weight: 500;
+        }
+        .error { color: #b30000; font-weight: 600; margin-top: 10px; }
+
+        .chart-container {
+            margin-top: 25px;
             padding: 15px;
-            border-radius: 10px;
-            margin-top: 25px;
-            font-weight: 500;
-            color: #333;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            background: #f9f9ff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.08);
         }
-
-        .error {
-            color: #b30000;
+        .chart-title {
             font-weight: 600;
-            margin-top: 10px;
+            color: #4A4AD8;
+            margin-bottom: 10px;
+            font-size: 1.1em;
         }
 
-        canvas {
-            margin-top: 25px;
+        .example {
+            background: #f9f9f9; padding: 10px; border-radius: 8px; font-family: monospace;
+            font-size: .85em; text-align: left; margin-top: 15px; max-height: 80px; overflow: auto;
         }
-
-        .footer {
-            margin-top: 25px;
-            font-size: 0.8em;
-            color: #777;
-        }
+        .footer { margin-top: 25px; font-size: .8em; color: #777; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>🌤️ Temperature Forecasting</h1>
-        <p>Enter the last <strong>10 temperature readings</strong> (comma-separated):</p>
+        <h1>Temp + Humidity Forecast</h1>
+        <p>Enter the <strong>last 10 values</strong> for each (comma-separated):</p>
 
         <form action="/predict" method="post">
-            <input type="text" name="values" placeholder="25.3, 26.1, 27.0, ..." required>
-            <button type="submit">Predict Next Temperature</button>
+            <div class="input-group">
+                <label for="temp_values">Temperature (°C)</label>
+                <input type="text" name="temp_values" id="temp_values"
+                       placeholder="9.47, 9.36, 9.38, 8.29, 8.76, 9.22, 7.73, 8.77, 10.82, 13.77"
+                       required>
+            </div>
+
+            <div class="input-group">
+                <label for="hum_values">Humidity</label>
+                <input type="text" name="hum_values" id="hum_values"
+                       placeholder="0.89, 0.86, 0.89, 0.83, 0.83, 0.85, 0.95, 0.89, 0.82, 0.72"
+                       required>
+            </div>
+
+            <button type="submit">Predict Next Values</button>
         </form>
+
+        <div class="example">
+            <strong>Example (first 10 rows from weatherHistory.csv):</strong><br>
+            <em>Temp:</em> 9.47,9.36,9.38,8.29,8.76,9.22,7.73,8.77,10.82,13.77<br>
+            <em>Hum:</em> 0.89,0.86,0.89,0.83,0.83,0.85,0.95,0.89,0.82,0.72
+        </div>
 
         {% if error %}
             <div class="error">{{ error }}</div>
         {% endif %}
 
-        {% if prediction %}
+        {% if next_temp is defined %}
             <div class="result">
-                Predicted next temperature: <strong>{{ prediction }}</strong>
+                <strong>Next Temperature:</strong> {{ next_temp }} °C<br>
+                <strong>Next Humidity:</strong> {{ next_hum }}
             </div>
 
-            <canvas id="forecastChart" width="400" height="200"></canvas>
+            <!-- Temperature Chart -->
+            <div class="chart-container">
+                <div class="chart-title">Temperature Forecast</div>
+                <canvas id="tempChart"></canvas>
+            </div>
 
-            
+            <!-- Humidity Chart -->
+            <div class="chart-container">
+                <div class="chart-title">Humidity Forecast</div>
+                <canvas id="humChart"></canvas>
+            </div>
+
             <script>
-                const ctx = document.getElementById('forecastChart').getContext('2d');
-                const chart = new Chart(ctx, {
+                // Temperature Chart
+                new Chart(document.getElementById('tempChart'), {
                     type: 'line',
                     data: {
                         labels: {{ chart_labels|tojson }},
                         datasets: [{
                             label: 'Temperature (°C)',
-                            data: {{ chart_values|tojson }},
+                            data: {{ temp_values|tojson }},
                             borderColor: '#4A4AD8',
-                            backgroundColor: 'rgba(74, 74, 216, 0.2)',
+                            backgroundColor: 'rgba(74,74,216,0.15)',
                             tension: 0.3,
                             fill: true,
                             pointRadius: 5,
@@ -145,14 +156,40 @@
                     },
                     options: {
                         responsive: true,
-                        scales: {
-                            y: { beginAtZero: false }
-                        },
                         plugins: {
                             legend: { display: false },
-                            title: {
-                                display: true,
-                                text: 'Past 10 + Next Forecast'
+                            title: { display: false }
+                        },
+                        scales: { y: { beginAtZero: false } }
+                    }
+                });
+
+                // Humidity Chart
+                new Chart(document.getElementById('humChart'), {
+                    type: 'line',
+                    data: {
+                        labels: {{ chart_labels|tojson }},
+                        datasets: [{
+                            label: 'Humidity',
+                            data: {{ hum_values|tojson }},
+                            borderColor: '#E91E63',
+                            backgroundColor: 'rgba(233,30,99,0.15)',
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#E91E63'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            title: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: { callback: value => value.toFixed(3) }
                             }
                         }
                     }
@@ -161,7 +198,7 @@
         {% endif %}
 
         <div class="footer">
-            Powered by Flask · LSTM Deep Learning Model
+            Flask + LSTM · Dual Forecast (Temp & Humidity)
         </div>
     </div>
 </body>
